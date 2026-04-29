@@ -125,7 +125,21 @@
         },
         "delayMs": 0.9
       }
+    },
+    {
+      "id": "55693dd8-50ab-4cc4-9eef-22236ea7af29",
+      "enabled": true,
+      "method": "GET",
+      "path": "/hello",
+      "priority": 0,
+      "response": {
+        "status": 200,
+        "headers": {},
+        "body": {
+          "ok": true
+        }
+      }
     }
   ],
-  "updatedAt": "2026-04-28T13:19:52.520Z"
+  "updatedAt": "2026-04-29T12:24:48.832Z"
 }

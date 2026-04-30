@@ -1,6 +1,11 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { createEmptyRegistry, type MockDefinition, type MockRegistry, validateMockDefinition } from "@/lib/mocks/types";
+import {
+  createEmptyRegistry,
+  type MockDefinition,
+  type MockRegistry,
+  validateMockDefinition,
+} from "@/lib/mocks/types";
 
 const REGISTRY_FILE = path.join(process.cwd(), "data", "mock-registry.json");
 
@@ -24,7 +29,7 @@ async function readJsonFile(filePath: string): Promise<unknown> {
 
 async function writeAtomicJson(filePath: string, value: unknown) {
   await ensureDataDir();
-  const tmp = `${filePath}.${Date.now()}.tmp`;
+  const tmp = path.join("/tmp", `${path.basename(filePath)}.${Date.now()}.tmp`);
   const data = JSON.stringify(value, null, 2) + "\n";
   await fs.writeFile(tmp, data, "utf8");
   await fs.rm(filePath, { force: true });
@@ -51,10 +56,13 @@ function normalizeRegistry(v: unknown): MockRegistry {
   };
 }
 
-export async function loadRegistry(options?: { bypassCache?: boolean }): Promise<MockRegistry> {
+export async function loadRegistry(options?: {
+  bypassCache?: boolean;
+}): Promise<MockRegistry> {
   const bypassCache = options?.bypassCache ?? false;
   const now = Date.now();
-  if (!bypassCache && cache && now - cache.loadedAtMs < CACHE_TTL_MS) return cache.registry;
+  if (!bypassCache && cache && now - cache.loadedAtMs < CACHE_TTL_MS)
+    return cache.registry;
 
   try {
     const parsed = await readJsonFile(REGISTRY_FILE);
@@ -63,7 +71,10 @@ export async function loadRegistry(options?: { bypassCache?: boolean }): Promise
     return registry;
   } catch (err: unknown) {
     const code =
-      typeof err === "object" && err && "code" in err && typeof (err as { code?: unknown }).code === "string"
+      typeof err === "object" &&
+      err &&
+      "code" in err &&
+      typeof (err as { code?: unknown }).code === "string"
         ? (err as { code: string }).code
         : undefined;
     if (code === "ENOENT") {
@@ -84,7 +95,9 @@ async function saveRegistry(registry: MockRegistry): Promise<void> {
 
 export async function listMocks(): Promise<MockDefinition[]> {
   const reg = await loadRegistry();
-  return reg.mocks.slice().sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
+  return reg.mocks
+    .slice()
+    .sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
 }
 
 export async function getMock(id: string): Promise<MockDefinition | null> {
@@ -92,7 +105,9 @@ export async function getMock(id: string): Promise<MockDefinition | null> {
   return reg.mocks.find((m) => m.id === id) ?? null;
 }
 
-export async function upsertMock(mock: MockDefinition): Promise<MockDefinition> {
+export async function upsertMock(
+  mock: MockDefinition,
+): Promise<MockDefinition> {
   const reg = await loadRegistry({ bypassCache: true });
   const idx = reg.mocks.findIndex((m) => m.id === mock.id);
   const nextMocks = reg.mocks.slice();
@@ -110,4 +125,3 @@ export async function deleteMock(id: string): Promise<boolean> {
   await saveRegistry({ ...reg, mocks: next });
   return true;
 }
-

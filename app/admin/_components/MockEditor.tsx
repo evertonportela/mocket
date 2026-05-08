@@ -12,16 +12,11 @@ function prettyJson(v: unknown) {
   return JSON.stringify(v ?? null, null, 2);
 }
 
-function parseJson(
-  text: string,
-): { ok: true; value: unknown } | { ok: false; error: string } {
+function parseJson(text: string): { ok: true; value: unknown } | { ok: false; error: string } {
   try {
     return { ok: true, value: JSON.parse(text) as unknown };
   } catch (e: unknown) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "Invalid JSON",
-    };
+    return { ok: false, error: e instanceof Error ? e.message : "Invalid JSON" };
   }
 }
 
@@ -31,15 +26,9 @@ export default function MockEditor({ initial, mode }: Props) {
   const [path, setPath] = useState<string>(initial?.path ?? "/hello");
   const [priority, setPriority] = useState<number>(initial?.priority ?? 0);
   const [status, setStatus] = useState<number>(initial?.response.status ?? 200);
-  const [delayMs, setDelayMs] = useState<number>(
-    initial?.response.delayMs ?? 0,
-  );
-  const [headersText, setHeadersText] = useState<string>(
-    prettyJson(initial?.response.headers ?? {}),
-  );
-  const [bodyText, setBodyText] = useState<string>(
-    prettyJson(initial?.response.body ?? { ok: true }),
-  );
+  const [delayMs, setDelayMs] = useState<number>(initial?.response.delayMs ?? 0);
+  const [headersText, setHeadersText] = useState<string>(prettyJson(initial?.response.headers ?? {}));
+  const [bodyText, setBodyText] = useState<string>(prettyJson(initial?.response.body ?? { ok: true }));
   const [rawContains, setRawContains] = useState<string>(
     initial?.match?.body?.find((b) => b.type === "rawContains")?.value ?? "",
   );
@@ -68,26 +57,19 @@ export default function MockEditor({ initial, mode }: Props) {
     setBusy(true);
     try {
       const headersParsed = parseJson(headersText);
-      if (
-        !headersParsed.ok ||
-        typeof headersParsed.value !== "object" ||
-        headersParsed.value === null
-      ) {
+      if (!headersParsed.ok || typeof headersParsed.value !== "object" || headersParsed.value === null) {
         throw new Error("response.headers deve ser um JSON objeto");
       }
 
       const bodyParsed = parseJson(bodyText);
-      if (!bodyParsed.ok)
-        throw new Error(`response.body inválido: ${bodyParsed.error}`);
+      if (!bodyParsed.ok) throw new Error(`response.body inválido: ${bodyParsed.error}`);
 
       const payload: Record<string, unknown> = {
         enabled,
         method,
         path,
         priority,
-        match: rawContains
-          ? { body: [{ type: "rawContains", value: rawContains }] }
-          : undefined,
+        match: rawContains ? { body: [{ type: "rawContains", value: rawContains }] } : undefined,
         response: {
           status,
           delayMs: delayMs || undefined,
@@ -96,8 +78,7 @@ export default function MockEditor({ initial, mode }: Props) {
         },
       };
 
-      const url =
-        mode === "create" ? "/api/admin/mocks" : `/api/admin/mocks/${id}`;
+      const url = mode === "create" ? "/api/admin/mocks" : `/api/admin/mocks/${id}`;
       const res = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "content-type": "application/json" },
@@ -106,18 +87,12 @@ export default function MockEditor({ initial, mode }: Props) {
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) {
         const maybeErr =
-          typeof data === "object" && data && "error" in data
-            ? (data as { error?: unknown }).error
-            : null;
-        throw new Error(
-          typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`,
-        );
+          typeof data === "object" && data && "error" in data ? (data as { error?: unknown }).error : null;
+        throw new Error(typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`);
       }
 
       const saved =
-        typeof data === "object" && data && "mock" in data
-          ? ((data as { mock?: unknown }).mock as MockDefinition)
-          : undefined;
+        typeof data === "object" && data && "mock" in data ? ((data as { mock?: unknown }).mock as MockDefinition) : undefined;
       if (mode === "create" && saved?.id) {
         window.location.href = `/admin/mocks/${saved.id}`;
         return;
@@ -138,13 +113,21 @@ export default function MockEditor({ initial, mode }: Props) {
           {mode === "create" ? "Novo mock" : "Editar mock"}
         </div>
         <button
-          onClick={onSave}
+          type="button"
+          onClick={() => void onSave()}
           disabled={!canSave || busy}
           className="h-10 rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-black"
         >
           {busy ? "Salvando..." : "Salvar"}
         </button>
       </div>
+
+      {!canSave ? (
+        <p className="mt-2 text-sm text-amber-800 dark:text-amber-200/90">
+          O path precisa começar com <span className="font-mono">/</span> para o Salvar ficar habilitado (ex.:{" "}
+          <span className="font-mono">/users</span>).
+        </p>
+      ) : null}
 
       {error ? (
         <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
@@ -159,9 +142,7 @@ export default function MockEditor({ initial, mode }: Props) {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Path
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Path</span>
           <input
             value={path}
             onChange={(e) => setPath(e.target.value)}
@@ -171,28 +152,22 @@ export default function MockEditor({ initial, mode }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Method
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Method</span>
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
             className="h-10 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-300 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:ring-zinc-700"
           >
-            {["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].map(
-              (m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ),
-            )}
+            {["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
           </select>
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Enabled
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Enabled</span>
           <select
             value={enabled ? "true" : "false"}
             onChange={(e) => setEnabled(e.target.value === "true")}
@@ -204,9 +179,7 @@ export default function MockEditor({ initial, mode }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Priority
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Priority</span>
           <input
             type="number"
             value={priority}
@@ -218,9 +191,7 @@ export default function MockEditor({ initial, mode }: Props) {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Status
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Status</span>
           <input
             type="number"
             value={status}
@@ -230,9 +201,7 @@ export default function MockEditor({ initial, mode }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Delay (ms)
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Delay (ms)</span>
           <input
             type="number"
             value={delayMs}
@@ -242,9 +211,7 @@ export default function MockEditor({ initial, mode }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Body rawContains
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Body rawContains</span>
           <input
             value={rawContains}
             onChange={(e) => setRawContains(e.target.value)}
@@ -256,9 +223,7 @@ export default function MockEditor({ initial, mode }: Props) {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Response headers (JSON)
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Response headers (JSON)</span>
           <textarea
             value={headersText}
             onChange={(e) => setHeadersText(e.target.value)}
@@ -267,9 +232,7 @@ export default function MockEditor({ initial, mode }: Props) {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-            Response body (JSON)
-          </span>
+          <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Response body (JSON)</span>
           <textarea
             value={bodyText}
             onChange={(e) => setBodyText(e.target.value)}
@@ -280,21 +243,17 @@ export default function MockEditor({ initial, mode }: Props) {
 
       {mode === "edit" && id ? (
         <div className="mt-8 rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-white/10 dark:bg-zinc-900/40">
-          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            Como testar
-          </div>
+          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Como testar</div>
           <div className="mt-2 flex items-start justify-between gap-3">
             <div className="font-mono text-xs text-zinc-700 dark:text-zinc-300">
-              curl -i -X {method} http://your-domain/api/mock{path}
+              curl -i -X {method} http://localhost:3000/api/mock{path}
             </div>
             <button
               type="button"
               title="Copiar"
               aria-label="Copiar"
               onClick={() =>
-                void copyToClipboard(
-                  `curl -i -X ${method} http://<your-domain>/api/mock${path}`,
-                )
+                void copyToClipboard(`curl -i -X ${method} http://localhost:3000/api/mock${path}`)
               }
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50 dark:border-white/10 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-900"
             >
@@ -318,3 +277,4 @@ export default function MockEditor({ initial, mode }: Props) {
     </div>
   );
 }
+

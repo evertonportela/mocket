@@ -1,5 +1,8 @@
 import type { HttpMethod } from "@/lib/mocks/types";
 
+/** Limite por campo de body no log (memória); trunca com flag se exceder. */
+export const MAX_LOG_BODY_CHARS = 100_000;
+
 export type RequestLogEntry = {
   id: string;
   at: string;
@@ -8,8 +11,18 @@ export type RequestLogEntry = {
   query: Record<string, string[]>;
   status: number;
   matchedMockId?: string;
-  bodyRawPreview?: string;
+  requestHeaders: Record<string, string>;
+  requestBody: string;
+  requestBodyTruncated?: boolean;
+  responseHeaders: Record<string, string>;
+  responseBody: string;
+  responseBodyTruncated?: boolean;
 };
+
+export function truncateForLog(text: string): { text: string; truncated: boolean } {
+  if (text.length <= MAX_LOG_BODY_CHARS) return { text, truncated: false };
+  return { text: text.slice(0, MAX_LOG_BODY_CHARS), truncated: true };
+}
 
 const MAX_ENTRIES = 200;
 
@@ -31,8 +44,17 @@ function makeId() {
 }
 
 export function addRequestLogEntry(entry: Omit<RequestLogEntry, "id">) {
+  const req = truncateForLog(entry.requestBody);
+  const res = truncateForLog(entry.responseBody);
   const store = getStore();
-  store.entries.unshift({ ...entry, id: makeId() });
+  store.entries.unshift({
+    ...entry,
+    id: makeId(),
+    requestBody: req.text,
+    requestBodyTruncated: req.truncated,
+    responseBody: res.text,
+    responseBodyTruncated: res.truncated,
+  });
   if (store.entries.length > MAX_ENTRIES) store.entries.length = MAX_ENTRIES;
 }
 

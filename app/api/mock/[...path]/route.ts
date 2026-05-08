@@ -66,15 +66,21 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
 
   const mocks = await listMocks();
   const best = selectBestMock(mocks, normalized);
+  const at = new Date().toISOString();
 
   if (!best) {
+    const errJson = JSON.stringify({ error: "No mock matched" });
+    const resHeaders = new Headers({ "content-type": "application/json; charset=utf-8" });
     addRequestLogEntry({
-      at: new Date().toISOString(),
+      at,
       method,
       path: actualPath,
       query: normalized.query,
       status: 404,
-      bodyRawPreview: normalized.bodyRaw.slice(0, 500),
+      requestHeaders: normalized.headers,
+      requestBody: normalized.bodyRaw,
+      responseHeaders: headersToRecord(resHeaders),
+      responseBody: errJson,
     });
     return Response.json({ error: "No mock matched" }, { status: 404 });
   }
@@ -86,44 +92,37 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
 
   const headers = new Headers(response.headers ?? undefined);
 
+  let outgoingBody: string | null = null;
   if (response.body === undefined || response.body === null) {
-    addRequestLogEntry({
-      at: new Date().toISOString(),
-      method,
-      path: actualPath,
-      query: normalized.query,
-      status: response.status,
-      matchedMockId: best.mock.id,
-      bodyRawPreview: normalized.bodyRaw.slice(0, 500),
-    });
-    return new Response(null, { status: response.status, headers });
-  }
-
-  if (typeof response.body === "string") {
+    outgoingBody = null;
+  } else if (typeof response.body === "string") {
     if (!headers.has("content-type")) headers.set("content-type", "text/plain; charset=utf-8");
-    addRequestLogEntry({
-      at: new Date().toISOString(),
-      method,
-      path: actualPath,
-      query: normalized.query,
-      status: response.status,
-      matchedMockId: best.mock.id,
-      bodyRawPreview: normalized.bodyRaw.slice(0, 500),
-    });
-    return new Response(response.body, { status: response.status, headers });
+    outgoingBody = response.body;
+  } else {
+    if (!headers.has("content-type")) headers.set("content-type", "application/json; charset=utf-8");
+    outgoingBody = JSON.stringify(response.body);
   }
 
-  if (!headers.has("content-type")) headers.set("content-type", "application/json; charset=utf-8");
+  const responseBodyLogged = outgoingBody ?? "";
+
   addRequestLogEntry({
-    at: new Date().toISOString(),
+    at,
     method,
     path: actualPath,
     query: normalized.query,
     status: response.status,
     matchedMockId: best.mock.id,
-    bodyRawPreview: normalized.bodyRaw.slice(0, 500),
+    requestHeaders: normalized.headers,
+    requestBody: normalized.bodyRaw,
+    responseHeaders: headersToRecord(headers),
+    responseBody: responseBodyLogged,
   });
-  return new Response(JSON.stringify(response.body), { status: response.status, headers });
+
+  if (outgoingBody === null) {
+    return new Response(null, { status: response.status, headers });
+  }
+
+  return new Response(outgoingBody, { status: response.status, headers });
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
@@ -147,4 +146,3 @@ export async function HEAD(req: NextRequest, ctx: { params: Promise<{ path: stri
 export async function OPTIONS(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   return handle(req, ctx);
 }
-

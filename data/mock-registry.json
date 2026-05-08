@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "mocks": [
+    {
+      "id": "d2307508-d01b-4d81-b002-6cd3c09fb462",
+      "enabled": true,
+      "method": "GET",
+      "path": "/ats",
+      "priority": 0,
+      "response": {
+        "status": 200,
+        "headers": {},
+        "body": {
+          "driver": {
+            "document": {
+              "type": "CPF",
+              "value": "060.872.265-08"
+            }
+          },
+          "company": {
+            "document": {
+              "type": "CNPJ",
+              "value": "37237856000195"
+            },
+            "name": "SOLAR"
+          },
+          "date": "2026-05-06T08:01:00-03:00",
+          "startedAt": "2026-06-05T08:01:00-03:00",
+          "endedAt": "2026-05-06T08:01:00-03:00",
+          "cards": [
+            {
+              "category": "STATUS",
+              "value": "Início de Refeição"
+            },
+            {
+              "category": "ACTIVE_TIME",
+              "value": {
+                "value": "23460",
+                "unit": "s"
+              },
+              "expectedValue": {
+                "value": "28800",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "MEAL_TIME",
+              "value": {
+                "value": "5940",
+                "unit": "s"
+              },
+              "expectedValue": {
+                "value": "3600",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "REST_TIME",
+              "value": {
+                "value": "0",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "IDLE_TIME",
+              "value": {
+                "value": "23460",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "DRIVING_TIME",
+              "value": {
+                "value": "0",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "POSITIVE_HOUR_BALANCE",
+              "value": {
+                "value": "0",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "POSITIVE_HOUR_BALANCE",
+              "value": {
+                "value": "-59400",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "NEGATIVE_HOUR_BALANCE",
+              "value": {
+                "value": "6540",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "WAITING_TIME",
+              "value": {
+                "value": "0",
+                "unit": "s"
+              }
+            },
+            {
+              "category": "DISTANCE_DRIVEN",
+              "value": {
+                "value": "0",
+                "unit": "km"
+              }
+            },
+            {
+              "category": "TIME_BETWEEN_SHIFTS",
+              "value": {
+                "value": "51300",
+                "unit": "s"
+              },
+              "expectedValue": {
+                "value": "39600",
+                "unit": "s"
+              }
+            }
+          ]
+        },
+        "delayMs": 0.9
+      }
+    },
+    {
+      "id": "17213958-0e34-4144-9659-538e49aea1a5",
+      "enabled": true,
+      "method": "GET",
+      "path": "/hello",
+      "priority": 0,
+      "response": {
+        "status": 200,
+        "headers": {},
+        "body": {
+          "ok": true
+        }
+      }
+    },
+    {
+      "id": "af418c61-d798-488a-9063-47e89c39efce",
+      "enabled": true,
+      "method": "POST",
+      "path": "/ats",
+      "priority": 0,
+      "response": {
+        "status": 201,
+        "headers": {},
+        "body": {
+          "ok": true
+        },
+        "delayMs": 5
+      }
+    }
+  ],
+  "updatedAt": "2026-05-08T15:34:59.312Z"
+}

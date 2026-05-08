@@ -9,7 +9,7 @@ yarn
 yarn dev
 ```
 
-Open [http://<your-domain>](http://<your-domain>) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### Mock Server (Beeceptor-like)
 
@@ -21,9 +21,9 @@ Este projeto implementa um **mock server** com:
 
 #### Admin UI
 
-- `http://<your-domain>/admin` (home)
-- `http://<your-domain>/admin/mocks` (listagem + criação/edição + request builder)
-- `http://<your-domain>/admin/requests` (requests recentes em memória)
+- `http://localhost:3000/admin` (home)
+- `http://localhost:3000/admin/mocks` (listagem + criação/edição + request builder)
+- `http://localhost:3000/admin/requests` (requests recentes em memória)
 
 #### Endpoint de execução (mock)
 
@@ -35,10 +35,10 @@ Exemplos:
 
 ```bash
 # GET
-curl -i http://<your-domain>/api/mock/hello
+curl -i http://localhost:3000/api/mock/hello
 
 # POST com JSON
-curl -i -X POST http://<your-domain>/api/mock/users \
+curl -i -X POST http://localhost:3000/api/mock/users \
   -H "content-type: application/json" \
   -d '{"name":"Ada"}'
 ```

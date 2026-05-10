@@ -1,8 +1,12 @@
+import { get, put } from "@vercel/blob";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { createEmptyRegistry, type MockDefinition, type MockRegistry, validateMockDefinition } from "@/lib/mocks/types";
 
 const REGISTRY_FILE = path.join(process.cwd(), "data", "mock-registry.json");
+
+/** Pathname fixo no Blob store (mesmo objeto em todas as atualizações). */
+const BLOB_PATHNAME = "mocket/mock-registry.json";
 
 type CacheState = {
   loadedAtMs: number;
@@ -11,6 +15,17 @@ type CacheState = {
 
 let cache: CacheState | null = null;
 const CACHE_TTL_MS = 500;
+
+function shouldUseBlob(): boolean {
+  if (process.env.MOCK_REGISTRY_FORCE_FS === "true") return false;
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+function resolveBlobAccess(): "public" | "private" {
+  const v = process.env.MOCK_REGISTRY_BLOB_ACCESS?.toLowerCase();
+  if (v === "public") return "public";
+  return "private";
+}
 
 async function ensureDataDir() {
   const dir = path.dirname(REGISTRY_FILE);
@@ -29,6 +44,28 @@ async function writeAtomicJson(filePath: string, value: unknown) {
   await fs.writeFile(tmp, data, "utf8");
   await fs.rm(filePath, { force: true });
   await fs.rename(tmp, filePath);
+}
+
+async function readRegistryFromBlob(): Promise<MockRegistry | null> {
+  const access = resolveBlobAccess();
+  const result = await get(BLOB_PATHNAME, {
+    access,
+    ...(access === "private" ? { useCache: false as const } : {}),
+  });
+  if (!result || result.statusCode !== 200 || result.stream === null) return null;
+  const raw = await new Response(result.stream).text();
+  const parsed = JSON.parse(raw) as unknown;
+  return normalizeRegistry(parsed);
+}
+
+async function writeRegistryToBlob(registry: MockRegistry): Promise<void> {
+  const access = resolveBlobAccess();
+  const data = JSON.stringify(registry, null, 2) + "\n";
+  await put(BLOB_PATHNAME, data, {
+    access,
+    contentType: "application/json",
+    allowOverwrite: true,
+  });
 }
 
 function nowIso() {
@@ -56,6 +93,12 @@ export async function loadRegistry(options?: { bypassCache?: boolean }): Promise
   const now = Date.now();
   if (!bypassCache && cache && now - cache.loadedAtMs < CACHE_TTL_MS) return cache.registry;
 
+  if (shouldUseBlob()) {
+    const registry = (await readRegistryFromBlob()) ?? createEmptyRegistry();
+    cache = { loadedAtMs: now, registry };
+    return registry;
+  }
+
   try {
     const parsed = await readJsonFile(REGISTRY_FILE);
     const registry = normalizeRegistry(parsed);
@@ -78,7 +121,11 @@ export async function loadRegistry(options?: { bypassCache?: boolean }): Promise
 
 async function saveRegistry(registry: MockRegistry): Promise<void> {
   const next: MockRegistry = { ...registry, version: 1, updatedAt: nowIso() };
-  await writeAtomicJson(REGISTRY_FILE, next);
+  if (shouldUseBlob()) {
+    await writeRegistryToBlob(next);
+  } else {
+    await writeAtomicJson(REGISTRY_FILE, next);
+  }
   cache = { loadedAtMs: Date.now(), registry: next };
 }
 
@@ -110,4 +157,3 @@ export async function deleteMock(id: string): Promise<boolean> {
   await saveRegistry({ ...reg, mocks: next });
   return true;
 }
-

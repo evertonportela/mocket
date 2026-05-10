@@ -17,7 +17,7 @@ Este projeto implementa um **mock server** com:
 
 - **Admin UI**: gerenciar mocks e testar requests.
 - **Executor**: endpoint catch-all que serve respostas mockadas por **método + path + regras**.
-- **Persistência**: arquivo `data/mock-registry.json` (versionado no repositório).
+- **Persistência**: em desenvolvimento (sem token Blob), arquivo local `data/mock-registry.json`. Na Vercel com [Blob](https://vercel.com/docs/storage/vercel-blob), o estado vivo fica no store; o arquivo no repo continua útil como referência e seed local.
 
 #### Admin UI
 
@@ -54,8 +54,21 @@ curl -i -X POST http://<your-domain>:3000/api/mock/users \
 
 #### Armazenamento
 
-- Os mocks ficam em `data/mock-registry.json`.
-- Ao usar a Admin UI, o arquivo é atualizado automaticamente.
+- **Local (sem `BLOB_MOCKET_READ_WRITE_TOKEN`)**: os mocks ficam em `data/mock-registry.json`. A Admin UI atualiza esse arquivo automaticamente.
+
+- **Produção na Vercel**: o filesystem da função não permite escrita durável. Com um **Blob store** ligado ao projeto, a variável `BLOB_MOCKET_READ_WRITE_TOKEN` é injetada automaticamente; o app passa a ler/escrever o registry em um objeto fixo no Blob (`mocket/mock-registry.json`).
+
+**Variáveis de ambiente**
+
+| Variável | Descrição |
+|----------|-----------|
+| `BLOB_MOCKET_READ_WRITE_TOKEN` | Se definida (ex.: deploy na Vercel com Blob store), usa Vercel Blob em vez do disco. Localmente: `vercel env pull`. |
+| `MOCK_REGISTRY_BLOB_ACCESS` | Opcional: `private` (padrão) ou `public`. Deve coincidir com o tipo da loja Blob no dashboard. |
+| `MOCK_REGISTRY_FORCE_FS` | Se `true`, força uso do arquivo local mesmo havendo token (debug local). |
+
+**Primeiro deploy com Blob**
+
+- Se o objeto ainda não existir no store, o registry começa vazio até a primeira gravação pela Admin UI (ou até você enviar `data/mock-registry.json` manualmente com `vercel blob put`, pelo dashboard, etc.).
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
@@ -73,3 +86,5 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+Para persistir mocks em produção na Vercel, crie um **Blob store** no projeto (Storage → Blob) para habilitar `BLOB_MOCKET_READ_WRITE_TOKEN`; veja a secção **Armazenamento** acima.

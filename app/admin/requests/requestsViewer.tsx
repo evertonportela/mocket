@@ -37,7 +37,8 @@ function methodBadgeClass(method: HttpMethod): string {
 }
 
 function statusBadgeClass(status: number): string {
-  const base = "rounded px-2 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-inset";
+  const base =
+    "rounded px-2 py-0.5 text-xs font-semibold tabular-nums ring-1 ring-inset";
   if (status >= 200 && status < 300) {
     return `${base} bg-emerald-500/15 text-emerald-800 ring-emerald-500/35 dark:text-emerald-200`;
   }
@@ -61,7 +62,9 @@ function formatShortTime(iso: string): string {
 }
 
 function sortedHeaderKeys(h: Record<string, string>): string[] {
-  return Object.keys(h).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  return Object.keys(h).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
 }
 
 function hasQueryParams(q: Record<string, string[]>): boolean {
@@ -71,7 +74,9 @@ function hasQueryParams(q: Record<string, string[]>): boolean {
 /** Serializa o objeto query do log para o fragmento após `?` (ordem de chaves estável). */
 function formatQueryString(q: Record<string, string[]>): string {
   const parts: string[] = [];
-  for (const k of Object.keys(q).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))) {
+  for (const k of Object.keys(q).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  )) {
     for (const v of q[k] ?? []) {
       parts.push(`${encodeURIComponent(k)}=${encodeURIComponent(v)}`);
     }
@@ -81,7 +86,9 @@ function formatQueryString(q: Record<string, string[]>): string {
 
 function QueryParamsTable({ query }: { query: Record<string, string[]> }) {
   const rows: { key: string; value: string }[] = [];
-  for (const k of Object.keys(query).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))) {
+  for (const k of Object.keys(query).sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  )) {
     for (const v of query[k] ?? []) {
       rows.push({ key: k, value: v });
     }
@@ -102,7 +109,9 @@ function QueryParamsTable({ query }: { query: Record<string, string[]> }) {
               <th className="whitespace-nowrap px-3 py-1.5 font-mono font-medium text-zinc-600 dark:text-zinc-400">
                 {row.key}
               </th>
-              <td className="break-all px-3 py-1.5 font-mono text-zinc-900 dark:text-zinc-100">{row.value}</td>
+              <td className="break-all px-3 py-1.5 font-mono text-zinc-900 dark:text-zinc-100">
+                {row.value}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -129,7 +138,9 @@ function HeadersBlock({ headers }: { headers: Record<string, string> }) {
               <th className="whitespace-nowrap px-3 py-1.5 font-mono font-medium text-zinc-600 dark:text-zinc-400">
                 {k}
               </th>
-              <td className="break-all px-3 py-1.5 font-mono text-zinc-900 dark:text-zinc-100">{headers[k]}</td>
+              <td className="break-all px-3 py-1.5 font-mono text-zinc-900 dark:text-zinc-100">
+                {headers[k]}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -163,7 +174,9 @@ function BodyPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-zinc-200 bg-white dark:border-white/10 dark:bg-zinc-950">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2 dark:border-white/10">
-        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{label}</span>
+        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          {label}
+        </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -185,7 +198,9 @@ function BodyPanel({
 
       {headersOpen ? (
         <div className="border-b border-zinc-100 px-3 py-2 dark:border-white/10">
-          <div className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">Headers</div>
+          <div className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+            Headers
+          </div>
           <HeadersBlock headers={headers} />
         </div>
       ) : null}
@@ -197,7 +212,9 @@ function BodyPanel({
           </p>
         ) : null}
         {display === "" ? (
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">(vazio)</span>
+          <span className="text-sm text-zinc-500 dark:text-zinc-400">
+            (vazio)
+          </span>
         ) : (
           <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-zinc-900 dark:text-zinc-100">
             {display}
@@ -234,8 +251,12 @@ function RequestEntryCard({
         <div className="flex flex-wrap items-center gap-2">
           <span className={methodBadgeClass(entry.method)}>{entry.method}</span>
           <span className={statusBadgeClass(entry.status)}>{entry.status}</span>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400">{formatShortTime(entry.at)}</span>
-          <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">{expanded ? "▲" : "▼"}</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {formatShortTime(entry.at)}
+          </span>
+          <span className="ml-auto text-xs text-zinc-400 dark:text-zinc-500">
+            {expanded ? "▲" : "▼"}
+          </span>
         </div>
         <div className="font-mono text-sm break-all text-zinc-900 dark:text-zinc-50">
           {urlWithQuery}
@@ -281,7 +302,10 @@ function RequestEntryCard({
 
       {expanded && entry.matchedMockId ? (
         <div className="border-t border-zinc-100 px-4 py-2 text-xs text-zinc-600 dark:border-white/10 dark:text-zinc-400">
-          Mock: <span className="font-mono text-zinc-900 dark:text-zinc-200">{entry.matchedMockId}</span>
+          Mock:{" "}
+          <span className="font-mono text-zinc-900 dark:text-zinc-200">
+            {entry.matchedMockId}
+          </span>
         </div>
       ) : null}
     </div>
@@ -298,11 +322,18 @@ export default function RequestsViewer() {
     const res = await fetch("/api/admin/requests", { cache: "no-store" });
     const data: unknown = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const maybeErr = typeof data === "object" && data && "error" in data ? (data as { error?: unknown }).error : null;
-      throw new Error(typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`);
+      const maybeErr =
+        typeof data === "object" && data && "error" in data
+          ? (data as { error?: unknown }).error
+          : null;
+      throw new Error(
+        typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`,
+      );
     }
     const entriesRaw =
-      typeof data === "object" && data && "entries" in data ? (data as { entries?: unknown }).entries : [];
+      typeof data === "object" && data && "entries" in data
+        ? (data as { entries?: unknown }).entries
+        : [];
     return Array.isArray(entriesRaw) ? (entriesRaw as RequestLogEntry[]) : [];
   }
 
@@ -319,7 +350,11 @@ export default function RequestsViewer() {
     let cancelled = false;
 
     async function poll() {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      )
+        return;
       try {
         const next = await fetchEntries();
         if (!cancelled) {
@@ -359,8 +394,12 @@ export default function RequestsViewer() {
       if (!res.ok) {
         const data: unknown = await res.json().catch(() => ({}));
         const maybeErr =
-          typeof data === "object" && data && "error" in data ? (data as { error?: unknown }).error : null;
-        throw new Error(typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`);
+          typeof data === "object" && data && "error" in data
+            ? (data as { error?: unknown }).error
+            : null;
+        throw new Error(
+          typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`,
+        );
       }
       setOpenIds(new Set());
       await refresh();
@@ -411,7 +450,8 @@ export default function RequestsViewer() {
       ) : null}
 
       <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-        Clique numa entrada para ver corpo e headers do pedido e da resposta lado a lado.
+        Clique numa entrada para ver corpo e headers do pedido e da resposta
+        lado a lado.
       </p>
 
       <div className="mt-4 space-y-3">

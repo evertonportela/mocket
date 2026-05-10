@@ -4,7 +4,9 @@ import { listMocks } from "@/lib/storage/mockRegistry";
 import { selectBestMock, type NormalizedRequest } from "@/lib/matcher/match";
 import { addRequestLogEntry } from "@/lib/observability/requestLog";
 
-async function readBody(req: NextRequest): Promise<{ raw: string; json?: unknown; form?: Record<string, string[]> }> {
+async function readBody(
+  req: NextRequest,
+): Promise<{ raw: string; json?: unknown; form?: Record<string, string[]> }> {
   const contentType = req.headers.get("content-type") ?? "";
   const raw = await req.text();
 
@@ -46,9 +48,13 @@ function headersToRecord(headers: Headers): Record<string, string> {
   return out;
 }
 
-async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+async function handle(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   const method = normalizeMethod(req.method);
-  if (!method) return Response.json({ error: "Method not supported" }, { status: 405 });
+  if (!method)
+    return Response.json({ error: "Method not supported" }, { status: 405 });
 
   const { path } = await ctx.params;
   const actualPath = "/" + (path ?? []).join("/");
@@ -70,7 +76,9 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
 
   if (!best) {
     const errJson = JSON.stringify({ error: "No mock matched" });
-    const resHeaders = new Headers({ "content-type": "application/json; charset=utf-8" });
+    const resHeaders = new Headers({
+      "content-type": "application/json; charset=utf-8",
+    });
     addRequestLogEntry({
       at,
       method,
@@ -96,10 +104,12 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
   if (response.body === undefined || response.body === null) {
     outgoingBody = null;
   } else if (typeof response.body === "string") {
-    if (!headers.has("content-type")) headers.set("content-type", "text/plain; charset=utf-8");
+    if (!headers.has("content-type"))
+      headers.set("content-type", "text/plain; charset=utf-8");
     outgoingBody = response.body;
   } else {
-    if (!headers.has("content-type")) headers.set("content-type", "application/json; charset=utf-8");
+    if (!headers.has("content-type"))
+      headers.set("content-type", "application/json; charset=utf-8");
     outgoingBody = JSON.stringify(response.body);
   }
 
@@ -125,24 +135,45 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
   return new Response(outgoingBody, { status: response.status, headers });
 }
 
-export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function GET(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function POST(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function PUT(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function PUT(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function DELETE(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function DELETE(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function HEAD(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function HEAD(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }
-export async function OPTIONS(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+export async function OPTIONS(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+) {
   return handle(req, ctx);
 }

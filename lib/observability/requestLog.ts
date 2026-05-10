@@ -19,7 +19,10 @@ export type RequestLogEntry = {
   responseBodyTruncated?: boolean;
 };
 
-export function truncateForLog(text: string): { text: string; truncated: boolean } {
+export function truncateForLog(text: string): {
+  text: string;
+  truncated: boolean;
+} {
   if (text.length <= MAX_LOG_BODY_CHARS) return { text, truncated: false };
   return { text: text.slice(0, MAX_LOG_BODY_CHARS), truncated: true };
 }
@@ -35,7 +38,8 @@ declare global {
 }
 
 function getStore(): Store {
-  if (!globalThis.__mockserverRequestLog) globalThis.__mockserverRequestLog = { entries: [] };
+  if (!globalThis.__mockserverRequestLog)
+    globalThis.__mockserverRequestLog = { entries: [] };
   return globalThis.__mockserverRequestLog;
 }
 
@@ -65,4 +69,3 @@ export function listRequestLogEntries(): RequestLogEntry[] {
 export function clearRequestLog() {
   getStore().entries = [];
 }
-

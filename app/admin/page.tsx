@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+const HOST_DOMAIN = process.env.HOST_DOMAIN ?? "localhost:3000";
+
 export default function AdminHome() {
   return (
     <div className="flex flex-1 justify-center bg-zinc-50 dark:bg-black">
@@ -34,13 +36,14 @@ export default function AdminHome() {
         </div>
 
         <div className="mt-10 rounded-xl border border-zinc-200 bg-white p-5 dark:border-white/10 dark:bg-zinc-950">
-          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Endpoint de execução</div>
+          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+            Endpoint de execução
+          </div>
           <div className="mt-2 font-mono text-sm text-zinc-700 dark:text-zinc-300">
-            /api/mock/&lt;sua-rota&gt;
+            {HOST_DOMAIN}/api/mock/&lt;sua-rota&gt;
           </div>
         </div>
       </main>
     </div>
   );
 }
-

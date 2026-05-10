@@ -13,11 +13,18 @@ export default function MocksTable() {
     const res = await fetch("/api/admin/mocks", { cache: "no-store" });
     const data: unknown = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const maybeErr = typeof data === "object" && data && "error" in data ? (data as { error?: unknown }).error : null;
-      throw new Error(typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`);
+      const maybeErr =
+        typeof data === "object" && data && "error" in data
+          ? (data as { error?: unknown }).error
+          : null;
+      throw new Error(
+        typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`,
+      );
     }
     const mocksRaw =
-      typeof data === "object" && data && "mocks" in data ? (data as { mocks?: unknown }).mocks : [];
+      typeof data === "object" && data && "mocks" in data
+        ? (data as { mocks?: unknown }).mocks
+        : [];
     return Array.isArray(mocksRaw) ? (mocksRaw as MockDefinition[]) : [];
   }
 
@@ -51,8 +58,12 @@ export default function MocksTable() {
       if (!res.ok) {
         const data: unknown = await res.json().catch(() => ({}));
         const maybeErr =
-          typeof data === "object" && data && "error" in data ? (data as { error?: unknown }).error : null;
-        throw new Error(typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`);
+          typeof data === "object" && data && "error" in data
+            ? (data as { error?: unknown }).error
+            : null;
+        throw new Error(
+          typeof maybeErr === "string" ? maybeErr : `HTTP ${res.status}`,
+        );
       }
       await refresh();
     } catch (e: unknown) {
@@ -65,7 +76,9 @@ export default function MocksTable() {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-white/10 dark:bg-zinc-950">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-lg font-medium text-black dark:text-zinc-50">Mocks</div>
+        <div className="text-lg font-medium text-black dark:text-zinc-50">
+          Mocks
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={refresh}
@@ -102,7 +115,10 @@ export default function MocksTable() {
           </thead>
           <tbody className="text-zinc-900 dark:text-zinc-50">
             {mocks.map((m) => (
-              <tr key={m.id} className="border-b border-zinc-100 dark:border-white/5">
+              <tr
+                key={m.id}
+                className="border-b border-zinc-100 dark:border-white/5"
+              >
                 <td className="py-2 pr-3">{m.enabled ? "true" : "false"}</td>
                 <td className="py-2 pr-3 font-mono">{m.method}</td>
                 <td className="py-2 pr-3 font-mono">{m.path}</td>
@@ -129,7 +145,10 @@ export default function MocksTable() {
             ))}
             {mocks.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-zinc-600 dark:text-zinc-400">
+                <td
+                  colSpan={6}
+                  className="py-6 text-zinc-600 dark:text-zinc-400"
+                >
                   Nenhum mock cadastrado.
                 </td>
               </tr>
@@ -140,4 +159,3 @@ export default function MocksTable() {
     </div>
   );
 }
-

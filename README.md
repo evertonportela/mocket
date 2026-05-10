@@ -60,11 +60,11 @@ curl -i -X POST http://<your-domain>:3000/api/mock/users \
 
 **Variáveis de ambiente**
 
-| Variável | Descrição |
-|----------|-----------|
+| Variável                       | Descrição                                                                                                           |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | `BLOB_MOCKET_READ_WRITE_TOKEN` | Se definida (ex.: deploy na Vercel com Blob store), usa Vercel Blob em vez do disco. Localmente: `vercel env pull`. |
-| `MOCK_REGISTRY_BLOB_ACCESS` | Opcional: `private` (padrão) ou `public`. Deve coincidir com o tipo da loja Blob no dashboard. |
-| `MOCK_REGISTRY_FORCE_FS` | Se `true`, força uso do arquivo local mesmo havendo token (debug local). |
+| `MOCK_REGISTRY_BLOB_ACCESS`    | Opcional: `private` (padrão) ou `public`. Deve coincidir com o tipo da loja Blob no dashboard.                      |
+| `MOCK_REGISTRY_FORCE_FS`       | Se `true`, força uso do arquivo local mesmo havendo token (debug local).                                            |
 
 **Primeiro deploy com Blob**
 

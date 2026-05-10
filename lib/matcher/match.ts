@@ -1,4 +1,9 @@
-import type { BodyRule, HttpMethod, KeyValueRule, MockDefinition } from "@/lib/mocks/types";
+import type {
+  BodyRule,
+  HttpMethod,
+  KeyValueRule,
+  MockDefinition,
+} from "@/lib/mocks/types";
 
 export type NormalizedRequest = {
   method: HttpMethod;
@@ -31,7 +36,10 @@ function compilePattern(patternPath: string) {
   return { segments, hasWildcard, paramNames };
 }
 
-function matchPath(patternPath: string, actualPath: string): { ok: boolean; params: Record<string, string>; score: number } {
+function matchPath(
+  patternPath: string,
+  actualPath: string,
+): { ok: boolean; params: Record<string, string>; score: number } {
   const pat = compilePattern(patternPath);
   const a = splitPath(actualPath);
 
@@ -85,7 +93,10 @@ function normalizeHeaderKey(k: string) {
   return k.toLowerCase();
 }
 
-function testKeyValueRules(rules: KeyValueRule[] | undefined, haystack: Record<string, string | string[]>) {
+function testKeyValueRules(
+  rules: KeyValueRule[] | undefined,
+  haystack: Record<string, string | string[]>,
+) {
   if (!rules?.length) return true;
 
   for (const rule of rules) {
@@ -161,13 +172,17 @@ function testBodyRules(rules: BodyRule[] | undefined, req: NormalizedRequest) {
   return true;
 }
 
-export function selectBestMock(mocks: MockDefinition[], req: NormalizedRequest): MatchResult | null {
+export function selectBestMock(
+  mocks: MockDefinition[],
+  req: NormalizedRequest,
+): MatchResult | null {
   let best: MatchResult | null = null;
 
   const queryHaystack: Record<string, string[]> = req.query;
   const headerHaystack: Record<string, string> = req.headers;
   const headerHaystackLower: Record<string, string> = {};
-  for (const [k, v] of Object.entries(headerHaystack)) headerHaystackLower[normalizeHeaderKey(k)] = v;
+  for (const [k, v] of Object.entries(headerHaystack))
+    headerHaystackLower[normalizeHeaderKey(k)] = v;
 
   for (const mock of mocks) {
     if (!mock.enabled) continue;
@@ -189,4 +204,3 @@ export function selectBestMock(mocks: MockDefinition[], req: NormalizedRequest):
 
   return best;
 }
-

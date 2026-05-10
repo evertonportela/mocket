@@ -10,7 +10,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const payload = (await req.json().catch(() => null)) as unknown;
-  if (!payload || typeof payload !== "object") return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  if (!payload || typeof payload !== "object")
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
 
   const id = randomUUID();
   const candidate: Record<string, unknown> = {
@@ -30,9 +31,9 @@ export async function POST(req: NextRequest) {
   }
 
   const validated = validateMockDefinition(candidate);
-  if (!validated.ok) return Response.json({ error: validated.error }, { status: 400 });
+  if (!validated.ok)
+    return Response.json({ error: validated.error }, { status: 400 });
 
   const saved = await upsertMock(validated.value);
   return Response.json({ mock: saved }, { status: 201 });
 }
-

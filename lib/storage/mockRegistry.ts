@@ -1,7 +1,12 @@
 import { get, put } from "@vercel/blob";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { createEmptyRegistry, type MockDefinition, type MockRegistry, validateMockDefinition } from "@/lib/mocks/types";
+import {
+  createEmptyRegistry,
+  type MockDefinition,
+  type MockRegistry,
+  validateMockDefinition,
+} from "@/lib/mocks/types";
 
 const REGISTRY_FILE = path.join(process.cwd(), "data", "mock-registry.json");
 
@@ -52,7 +57,8 @@ async function readRegistryFromBlob(): Promise<MockRegistry | null> {
     access,
     ...(access === "private" ? { useCache: false as const } : {}),
   });
-  if (!result || result.statusCode !== 200 || result.stream === null) return null;
+  if (!result || result.statusCode !== 200 || result.stream === null)
+    return null;
   const raw = await new Response(result.stream).text();
   const parsed = JSON.parse(raw) as unknown;
   return normalizeRegistry(parsed);
@@ -88,10 +94,13 @@ function normalizeRegistry(v: unknown): MockRegistry {
   };
 }
 
-export async function loadRegistry(options?: { bypassCache?: boolean }): Promise<MockRegistry> {
+export async function loadRegistry(options?: {
+  bypassCache?: boolean;
+}): Promise<MockRegistry> {
   const bypassCache = options?.bypassCache ?? false;
   const now = Date.now();
-  if (!bypassCache && cache && now - cache.loadedAtMs < CACHE_TTL_MS) return cache.registry;
+  if (!bypassCache && cache && now - cache.loadedAtMs < CACHE_TTL_MS)
+    return cache.registry;
 
   if (shouldUseBlob()) {
     const registry = (await readRegistryFromBlob()) ?? createEmptyRegistry();
@@ -106,7 +115,10 @@ export async function loadRegistry(options?: { bypassCache?: boolean }): Promise
     return registry;
   } catch (err: unknown) {
     const code =
-      typeof err === "object" && err && "code" in err && typeof (err as { code?: unknown }).code === "string"
+      typeof err === "object" &&
+      err &&
+      "code" in err &&
+      typeof (err as { code?: unknown }).code === "string"
         ? (err as { code: string }).code
         : undefined;
     if (code === "ENOENT") {
@@ -131,7 +143,9 @@ async function saveRegistry(registry: MockRegistry): Promise<void> {
 
 export async function listMocks(): Promise<MockDefinition[]> {
   const reg = await loadRegistry();
-  return reg.mocks.slice().sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
+  return reg.mocks
+    .slice()
+    .sort((a, b) => b.priority - a.priority || a.path.localeCompare(b.path));
 }
 
 export async function getMock(id: string): Promise<MockDefinition | null> {
@@ -139,7 +153,9 @@ export async function getMock(id: string): Promise<MockDefinition | null> {
   return reg.mocks.find((m) => m.id === id) ?? null;
 }
 
-export async function upsertMock(mock: MockDefinition): Promise<MockDefinition> {
+export async function upsertMock(
+  mock: MockDefinition,
+): Promise<MockDefinition> {
   const reg = await loadRegistry({ bypassCache: true });
   const idx = reg.mocks.findIndex((m) => m.id === mock.id);
   const nextMocks = reg.mocks.slice();

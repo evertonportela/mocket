@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-const HOST_DOMAIN = process.env.HOST_DOMAIN ?? "localhost:3000";
-
 export default function AdminHome() {
+  const HOST_DOMAIN = process.env.HOST_DOMAIN ?? "localhost:3000";
+
   return (
     <div className="flex flex-1 justify-center bg-zinc-50 dark:bg-black">
       <main className="w-full max-w-4xl px-6 py-12">

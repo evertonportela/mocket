@@ -8,8 +8,6 @@ type Props = {
   mode: "create" | "edit";
 };
 
-const HOST_DOMAIN = process.env.HOST_DOMAIN ?? "localhost:3000";
-
 function prettyJson(v: unknown) {
   return JSON.stringify(v ?? null, null, 2);
 }
@@ -52,6 +50,8 @@ export default function MockEditor({ initial, mode }: Props) {
 
   const id = initial?.id;
   const canSave = useMemo(() => path.startsWith("/"), [path]);
+
+  const HOST_DOMAIN = process.env.HOST_DOMAIN ?? "localhost:3000";
 
   async function copyToClipboard(text: string) {
     try {

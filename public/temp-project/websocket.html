@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebSocket Chat — Flow Tester</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+      :root {
+        --bg: #0f1419;
+        --surface: #1a2332;
+        --surface-2: #243044;
+        --border: #2d3a4f;
+        --text: #e8eef7;
+        --muted: #8b9bb4;
+        --accent: #ff3d03;
+        --accent-dim: #aa0000;
+        --ok: #22c55e;
+        --warn: #eab308;
+        --err: #ef4444;
+        --info: #38bdf8;
+        --mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+        --sans: 'Segoe UI', system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 1.25rem;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 650;
+      }
+
+      header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .status-pill {
+        margin-left: auto;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+      }
+
+      .status-pill.connected {
+        color: var(--ok);
+        border-color: color-mix(in srgb, var(--ok) 40%, var(--border));
+      }
+
+      .status-pill.disconnected {
+        color: var(--err);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 380px) 1fr;
+        gap: 0;
+        min-height: calc(100vh - 64px);
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      aside {
+        padding: 1rem;
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+      }
+
+      main {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-width: 0;
+      }
+
+      .card {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+      }
+
+      .card h2 {
+        margin: 0 0 0.75rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        font-weight: 650;
+      }
+
+      label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-bottom: 0.25rem;
+      }
+
+      .field {
+        margin-bottom: 0.65rem;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.5rem 0.65rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        color: var(--text);
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 72px;
+        resize: vertical;
+        font-family: var(--mono);
+        font-size: 0.8rem;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+        outline-offset: 1px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      button {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
+        padding: 0.45rem 0.75rem;
+        border-radius: 6px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button:hover:not(:disabled) {
+        border-color: var(--muted);
+      }
+
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+
+      button.primary:hover:not(:disabled) {
+        background: var(--accent-dim);
+        border-color: var(--accent-dim);
+      }
+
+      button.danger {
+        border-color: color-mix(in srgb, var(--err) 50%, var(--border));
+        color: var(--err);
+      }
+
+      .room-preview {
+        font-family: var(--mono);
+        font-size: 0.8rem;
+        word-break: break-all;
+        padding: 0.55rem 0.65rem;
+        background: var(--bg);
+        border-radius: 6px;
+        border: 1px dashed var(--border);
+        color: var(--info);
+      }
+
+      .hint {
+        margin: 0.35rem 0 0;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+
+      .checklist {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .checklist li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.4rem 0.5rem;
+        border-radius: 6px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        font-size: 0.8rem;
+      }
+
+      .checklist li.done {
+        border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
+      }
+
+      .check {
+        flex: none;
+        width: 1.1rem;
+        height: 1.1rem;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-size: 0.65rem;
+        margin-top: 0.1rem;
+      }
+
+      .checklist li.done .check {
+        background: var(--ok);
+        border-color: var(--ok);
+        color: #052e16;
+      }
+
+      .messages,
+      .log {
+        flex: 1;
+        min-height: 180px;
+        max-height: 42vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .msg {
+        padding: 0.65rem 0.75rem;
+        border-radius: 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+      }
+
+      .msg .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.85rem;
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-family: var(--mono);
+        margin-bottom: 0.35rem;
+      }
+
+      .msg .content {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .log-entry {
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 4px;
+        background: var(--bg);
+        border-left: 3px solid var(--muted);
+        word-break: break-word;
+      }
+
+      .log-entry.info {
+        border-left-color: var(--info);
+      }
+
+      .log-entry.ok {
+        border-left-color: var(--ok);
+      }
+
+      .log-entry.warn {
+        border-left-color: var(--warn);
+      }
+
+      .log-entry.err {
+        border-left-color: var(--err);
+      }
+
+      .empty {
+        color: var(--muted);
+        font-size: 0.85rem;
+        padding: 1rem;
+        text-align: center;
+      }
+
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .toolbar h2 {
+        margin: 0;
+      }
+
+      .count {
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>WebSocket Chat — Flow Tester</h1>
+        <p>
+          Valida o fluxo do commit
+          <code>refactor(websocket): update chat message context handling</code>
+          — room
+          <code>CHAT_{recipient}_{context}_{entityId}</code>
+        </p>
+      </div>
+      <span id="connectionStatus" class="status-pill disconnected">Desconectado</span>
+    </header>
+
+    <div class="layout">
+      <aside>
+        <section class="card">
+          <h2>1. Conexão</h2>
+          <div class="field">
+            <label for="wsUrl">Socket.IO URL</label>
+            <input id="wsUrl" type="text" value="http://localhost:3005" />
+          </div>
+          <div class="btn-row">
+            <button id="btnConnect" class="primary" type="button">Conectar</button>
+            <button id="btnDisconnect" type="button" disabled>Desconectar</button>
+          </div>
+          <p class="hint">
+            Servidor local: <code>yarn nx serve websocket</code> (porta padrão 3005).
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>2. Room (novo formato)</h2>
+          <div class="field">
+            <label for="owner">Owner da mensagem (quem envia)</label>
+            <select id="owner">
+              <option value="COMPANY" selected>COMPANY</option>
+              <option value="DRIVER">DRIVER</option>
+            </select>
+            <p class="hint">
+              Recipient = oposto do owner. COMPANY → room
+              <code>CHAT_DRIVER_...</code>
+            </p>
+          </div>
+          <div class="row">
+            <div class="field">
+              <label for="context">Context</label>
+              <select id="context">
+                <option value="DRIVER_COMPANY" selected>DRIVER_COMPANY</option>
+                <option value="SCHEDULE">SCHEDULE</option>
+                <option value="TRAVEL">TRAVEL</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="entityId">Entity ID (ObjectId)</label>
+              <input
+                id="entityId"
+                type="text"
+                maxlength="24"
+                placeholder="24 hex chars"
+                value="507f1f77bcf86cd799439011"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label>Room gerada</label>
+            <div id="roomPreview" class="room-preview"></div>
+          </div>
+          <div class="btn-row">
+            <button id="btnJoin" class="primary" type="button" disabled>Join room</button>
+            <button id="btnLeave" type="button" disabled>Leave room</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>3. Emitir (POST /v1/internal/chat)</h2>
+          <div class="field">
+            <label for="chatId">Chat ID (ObjectId)</label>
+            <input
+              id="chatId"
+              type="text"
+              maxlength="24"
+              value="507f191e810c19729de860ea"
+            />
+          </div>
+          <div class="field">
+            <label for="content">Content</label>
+            <textarea id="content">Olá — teste websocket DRIVER_COMPANY</textarea>
+          </div>
+          <div class="field">
+            <label for="token">Authorization (opcional — /internal não exige)</label>
+            <input id="token" type="text" placeholder="Bearer ..." />
+          </div>
+          <div class="btn-row">
+            <button id="btnEmit" class="primary" type="button" disabled>
+              Publicar mensagem
+            </button>
+          </div>
+          <p class="hint">
+            Simula <code>chatHelper → websocketHelper → POST /v1/internal/chat</code>
+            → <code>socketIo.in(room).emit('message', …)</code>
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Checklist do fluxo</h2>
+          <ul class="checklist" id="checklist">
+            <li data-step="connect">
+              <span class="check"></span>
+              <span>Conectar no Socket.IO</span>
+            </li>
+            <li data-step="join">
+              <span class="check"></span>
+              <span>Join na room <code>CHAT_*</code></span>
+            </li>
+            <li data-step="emit">
+              <span class="check"></span>
+              <span>POST /v1/internal/chat com room + payload</span>
+            </li>
+            <li data-step="receive">
+              <span class="check"></span>
+              <span>Receber evento <code>message</code> com content/sentAt/chat</span>
+            </li>
+            <li data-step="payload">
+              <span class="check"></span>
+              <span>Payload válido (campos esperados)</span>
+            </li>
+          </ul>
+          <p class="hint" id="flowSummary">0/5 passos concluídos</p>
+        </section>
+      </aside>
+
+      <main>
+        <section class="card" style="flex: 1; display: flex; flex-direction: column">
+          <div class="toolbar">
+            <h2>Mensagens recebidas (<code>message</code>)</h2>
+            <div class="btn-row">
+              <span class="count" id="msgCount">0</span>
+              <button id="btnClearMessages" type="button">Limpar</button>
+            </div>
+          </div>
+          <div id="messages" class="messages">
+            <div class="empty">Nenhuma mensagem ainda. Faça join e publique.</div>
+          </div>
+        </section>
+
+        <section class="card" style="flex: 1; display: flex; flex-direction: column">
+          <div class="toolbar">
+            <h2>Log de eventos</h2>
+            <button id="btnClearLog" type="button">Limpar</button>
+          </div>
+          <div id="log" class="log"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      ;(() => {
+        const OBJECT_ID_RE = /^[a-fA-F0-9]{24}$/
+
+        const els = {
+          wsUrl: document.getElementById('wsUrl'),
+          owner: document.getElementById('owner'),
+          context: document.getElementById('context'),
+          entityId: document.getElementById('entityId'),
+          roomPreview: document.getElementById('roomPreview'),
+          chatId: document.getElementById('chatId'),
+          content: document.getElementById('content'),
+          token: document.getElementById('token'),
+          connectionStatus: document.getElementById('connectionStatus'),
+          messages: document.getElementById('messages'),
+          msgCount: document.getElementById('msgCount'),
+          log: document.getElementById('log'),
+          flowSummary: document.getElementById('flowSummary'),
+          btnConnect: document.getElementById('btnConnect'),
+          btnDisconnect: document.getElementById('btnDisconnect'),
+          btnJoin: document.getElementById('btnJoin'),
+          btnLeave: document.getElementById('btnLeave'),
+          btnEmit: document.getElementById('btnEmit'),
+          btnClearMessages: document.getElementById('btnClearMessages'),
+          btnClearLog: document.getElementById('btnClearLog'),
+        }
+
+        const state = {
+          socket: null,
+          joinedRoom: null,
+          messageCount: 0,
+          steps: {
+            connect: false,
+            join: false,
+            emit: false,
+            receive: false,
+            payload: false,
+          },
+        }
+
+        function recipientFromOwner(owner) {
+          return owner === 'DRIVER' ? 'COMPANY' : 'DRIVER'
+        }
+
+        function buildRoom() {
+          const recipient = recipientFromOwner(els.owner.value)
+          const context = els.context.value
+          const entityId = els.entityId.value.trim()
+          return `CHAT_${recipient}_${context}_${entityId}`
+        }
+
+        function refreshRoomPreview() {
+          els.roomPreview.textContent = buildRoom()
+        }
+
+        function setConnectedUi(connected) {
+          els.connectionStatus.textContent = connected ? 'Conectado' : 'Desconectado'
+          els.connectionStatus.classList.toggle('connected', connected)
+          els.connectionStatus.classList.toggle('disconnected', !connected)
+          els.btnConnect.disabled = connected
+          els.btnDisconnect.disabled = !connected
+          els.btnJoin.disabled = !connected
+          els.btnLeave.disabled = !connected || !state.joinedRoom
+          els.btnEmit.disabled = !connected
+        }
+
+        function markStep(step, done = true) {
+          state.steps[step] = done
+          const li = document.querySelector(`[data-step="${step}"]`)
+          if (li) {
+            li.classList.toggle('done', done)
+            li.querySelector('.check').textContent = done ? '✓' : ''
+          }
+          const total = Object.keys(state.steps).length
+          const doneCount = Object.values(state.steps).filter(Boolean).length
+          els.flowSummary.textContent =
+            doneCount === total
+              ? `Fluxo completo (${doneCount}/${total}) ✓`
+              : `${doneCount}/${total} passos concluídos`
+        }
+
+        function log(level, text, detail) {
+          const entry = document.createElement('div')
+          entry.className = `log-entry ${level}`
+          const ts = new Date().toISOString().slice(11, 23)
+          entry.textContent = detail
+            ? `[${ts}] ${text} ${typeof detail === 'string' ? detail : JSON.stringify(detail)}`
+            : `[${ts}] ${text}`
+          els.log.prepend(entry)
+        }
+
+        function clearMessagesUi() {
+          state.messageCount = 0
+          els.msgCount.textContent = '0'
+          els.messages.innerHTML =
+            '<div class="empty">Nenhuma mensagem ainda. Faça join e publique.</div>'
+        }
+
+        function appendMessage(payload) {
+          if (els.messages.querySelector('.empty')) {
+            els.messages.innerHTML = ''
+          }
+
+          state.messageCount += 1
+          els.msgCount.textContent = String(state.messageCount)
+
+          const card = document.createElement('div')
+          card.className = 'msg'
+
+          const meta = document.createElement('div')
+          meta.className = 'meta'
+          meta.innerHTML = [
+            `<span>#${state.messageCount}</span>`,
+            `<span>chat: ${escapeHtml(String(payload?.chat ?? '—'))}</span>`,
+            `<span>sentAt: ${escapeHtml(formatSentAt(payload?.sentAt))}</span>`,
+            `<span>room: ${escapeHtml(state.joinedRoom || '—')}</span>`,
+          ].join('')
+
+          const content = document.createElement('div')
+          content.className = 'content'
+          content.textContent =
+            payload?.content != null ? String(payload.content) : '(sem content)'
+
+          const raw = document.createElement('pre')
+          raw.className = 'hint'
+          raw.style.marginTop = '0.5rem'
+          raw.style.whiteSpace = 'pre-wrap'
+          raw.textContent = JSON.stringify(payload, null, 2)
+
+          card.append(meta, content, raw)
+          els.messages.prepend(card)
+        }
+
+        function formatSentAt(value) {
+          if (value == null) return '—'
+          try {
+            return new Date(value).toISOString()
+          } catch {
+            return String(value)
+          }
+        }
+
+        function escapeHtml(value) {
+          return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+        }
+
+        function validateObjectId(value, label) {
+          if (!OBJECT_ID_RE.test(value)) {
+            throw new Error(`${label} deve ser ObjectId (24 hex).`)
+          }
+        }
+
+        function validateMessagePayload(payload) {
+          const errors = []
+          if (!payload || typeof payload !== 'object') {
+            return ['payload não é objeto']
+          }
+          if (typeof payload.content !== 'string') {
+            errors.push('content deve ser string')
+          }
+          if (payload.sentAt == null) {
+            errors.push('sentAt ausente')
+          } else if (Number.isNaN(new Date(payload.sentAt).getTime())) {
+            errors.push('sentAt inválido')
+          }
+          if (payload.chat == null) {
+            errors.push('chat ausente')
+          } else if (!OBJECT_ID_RE.test(String(payload.chat))) {
+            errors.push('chat não parece ObjectId')
+          }
+          return errors
+        }
+
+        function connect() {
+          if (state.socket) {
+            state.socket.disconnect()
+            state.socket = null
+          }
+
+          const url = els.wsUrl.value.trim()
+          if (!url) {
+            log('err', 'URL do websocket vazia')
+            return
+          }
+
+          log('info', 'Conectando…', url)
+          const socket = io(url, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+          })
+          state.socket = socket
+
+          socket.on('connect', () => {
+            markStep('connect')
+            setConnectedUi(true)
+            log('ok', 'Socket conectado', socket.id)
+          })
+
+          socket.on('disconnect', reason => {
+            setConnectedUi(false)
+            state.joinedRoom = null
+            markStep('join', false)
+            log('warn', 'Socket desconectado', reason)
+          })
+
+          socket.on('connect_error', err => {
+            setConnectedUi(false)
+            log('err', 'Erro de conexão', err.message || err)
+          })
+
+          socket.on('message', payload => {
+            log('ok', 'Evento message recebido', payload)
+            appendMessage(payload)
+            markStep('receive')
+
+            const errors = validateMessagePayload(payload)
+            if (errors.length === 0) {
+              markStep('payload')
+              log('ok', 'Payload válido (content, sentAt, chat)')
+            } else {
+              markStep('payload', false)
+              log('err', 'Payload inválido', errors.join('; '))
+            }
+          })
+        }
+
+        function disconnect() {
+          if (!state.socket) return
+          state.socket.disconnect()
+          state.socket = null
+          state.joinedRoom = null
+          setConnectedUi(false)
+          log('info', 'Desconectado manualmente')
+        }
+
+        function joinRoom() {
+          if (!state.socket?.connected) {
+            log('err', 'Socket não conectado')
+            return
+          }
+
+          try {
+            validateObjectId(els.entityId.value.trim(), 'Entity ID')
+          } catch (err) {
+            log('err', err.message)
+            return
+          }
+
+          const room = buildRoom()
+          state.socket.emit('join', room)
+          state.joinedRoom = room
+          els.btnLeave.disabled = false
+          markStep('join')
+          log('ok', 'Join emitido', room)
+        }
+
+        function leaveRoom() {
+          if (!state.socket?.connected || !state.joinedRoom) return
+          const room = state.joinedRoom
+          state.socket.emit('leave', room)
+          state.joinedRoom = null
+          els.btnLeave.disabled = true
+          markStep('join', false)
+          log('info', 'Leave emitido', room)
+        }
+
+        async function emitMessage() {
+          const room = buildRoom()
+          const chatId = els.chatId.value.trim()
+          const content = els.content.value
+          const baseUrl = els.wsUrl.value.trim().replace(/\/$/, '')
+
+          try {
+            validateObjectId(els.entityId.value.trim(), 'Entity ID')
+            validateObjectId(chatId, 'Chat ID')
+          } catch (err) {
+            log('err', err.message)
+            return
+          }
+
+          if (!content.trim()) {
+            log('err', 'Content vazio')
+            return
+          }
+
+          if (state.joinedRoom !== room) {
+            log(
+              'warn',
+              'Atenção: room do join difere da room do POST. Fazendo join automático…',
+              { joined: state.joinedRoom, posting: room },
+            )
+            joinRoom()
+          }
+
+          const body = {
+            room,
+            content,
+            sentAt: new Date().toISOString(),
+            chat: chatId,
+          }
+
+          const headers = { 'Content-Type': 'application/json' }
+          const token = els.token.value.trim()
+          if (token) {
+            headers.Authorization = token.startsWith('Bearer ')
+              ? token
+              : `Bearer ${token}`
+          }
+
+          log('info', 'POST /v1/internal/chat', body)
+
+          try {
+            const response = await fetch(`${baseUrl}/v1/internal/chat`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify(body),
+            })
+            const text = await response.text()
+            let data
+            try {
+              data = JSON.parse(text)
+            } catch {
+              data = text
+            }
+
+            if (!response.ok) {
+              log('err', `HTTP ${response.status}`, data)
+              return
+            }
+
+            markStep('emit')
+            log('ok', `HTTP ${response.status}`, data)
+          } catch (err) {
+            log('err', 'Falha no POST', err.message || err)
+          }
+        }
+
+        // Wire UI
+        ;['owner', 'context', 'entityId'].forEach(id => {
+          els[id].addEventListener('input', refreshRoomPreview)
+          els[id].addEventListener('change', refreshRoomPreview)
+        })
+
+        els.btnConnect.addEventListener('click', connect)
+        els.btnDisconnect.addEventListener('click', disconnect)
+        els.btnJoin.addEventListener('click', joinRoom)
+        els.btnLeave.addEventListener('click', leaveRoom)
+        els.btnEmit.addEventListener('click', emitMessage)
+        els.btnClearMessages.addEventListener('click', clearMessagesUi)
+        els.btnClearLog.addEventListener('click', () => {
+          els.log.innerHTML = ''
+        })
+
+        // Defaults from current host when served by the websocket app
+        if (location.protocol.startsWith('http') && location.port) {
+          els.wsUrl.value = `${location.protocol}//${location.host}`
+        }
+
+        refreshRoomPreview()
+        setConnectedUi(false)
+        log(
+          'info',
+          'Pronto. Fluxo: conectar → join → publicar → receber message. Room format pós-#112846.',
+        )
+      })()
+    </script>
+  </body>
+</html>
